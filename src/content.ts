@@ -1,0 +1,1 @@
+console.log("Injected into page:", window.location.href);
