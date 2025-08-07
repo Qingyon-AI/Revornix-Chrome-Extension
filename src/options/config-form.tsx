@@ -48,12 +48,17 @@ const ConfigForm = () => {
 	};
 
 	return (
-		<div className='p-5 bg-linear-120 from-[#fdfbfb] to-[#ebedee] h-screen overflow-auto'>
+		<div className='p-5'>
 			<div className='max-w-3xl mx-auto'>
 				<img
 					src='/logo.png'
 					alt='cover'
-					className='w-full object-cover mb-5 rounded'
+					className='w-full object-cover mb-5 rounded dark:hidden'
+				/>
+				<img
+					src='/logo-dark.png'
+					alt='cover'
+					className='w-full object-cover mb-5 rounded hidden dark:block'
 				/>
 				<Alert className='mb-5 bg-transparent backdrop-blur-2xl'>
 					<Info />

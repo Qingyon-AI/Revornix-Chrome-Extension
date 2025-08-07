@@ -3,7 +3,6 @@ import RootLayout from './layout';
 import ConfigForm from './config-form';
 
 export function App() {
-	
 	return (
 		<RootLayout>
 			<ConfigForm />
