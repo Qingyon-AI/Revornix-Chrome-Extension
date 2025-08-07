@@ -3,13 +3,14 @@
     "description": "The chrome extension for Revornix.",
     "version": "0.0.1",
     "manifest_version": 3,
-    "options_page": "src/options/index.html",
+    "options_page": "src/pages/options/index.html",
     "action": {
-        "default_popup": "src/popup/index.html",
+        "default_popup": "src/pages/popup/index.html",
         "default_icon": "icon.png"
     },
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     },
     "content_scripts": [
         {
@@ -24,7 +25,8 @@
     "permissions": [
         "scripting",
         "tabs",
-        "storage"
+        "storage",
+        "contextMenus"
     ],
     "host_permissions": [
         "<all_urls>"

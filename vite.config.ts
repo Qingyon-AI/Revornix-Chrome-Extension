@@ -12,15 +12,15 @@ export default defineConfig({
     target: 'esnext',
     rollupOptions: {
       input: {
-        background: resolve(__dirname, 'src/background.ts'),
-        content: resolve(__dirname, 'src/content.ts'),
-        popup: resolve(__dirname, 'src/popup/index.html'),
-        options: resolve(__dirname, 'src/options/index.html'),
+        background: resolve(__dirname, 'src/background/index.ts'),
+        content: resolve(__dirname, 'src/content/index.ts'),
+        popup: resolve(__dirname, 'src/pages/popup/index.html'),
+        options: resolve(__dirname, 'src/pages/options/index.html'),
       },
       output: {
         entryFileNames: '[name].js',          // 没有 hash
         chunkFileNames: '[name].js',
-        assetFileNames: '[name][extname]',    // 静态资源不进 assets/
+        assetFileNames: 'assets/[name][extname]',    // 静态资源不进 assets/
       }
     }
   },
