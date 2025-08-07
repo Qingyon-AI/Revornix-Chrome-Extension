@@ -14,8 +14,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Session } from 'revornix';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CreateDocument = () => {
 	const [baseUrl, setBaseUrl] = useState('');
@@ -25,6 +27,7 @@ const CreateDocument = () => {
 		url: z.url(),
 		title: z.string().optional(),
 		description: z.string().optional(),
+		labels: z.array(z.number()),
 		cover: z.string().optional(),
 		sections: z.array(z.number()),
 		auto_summary: z.boolean(),
@@ -38,6 +41,42 @@ const CreateDocument = () => {
 			auto_summary: false,
 		},
 	});
+
+	const { data: labels } = useQuery({
+		queryKey: ['getDocumentLabels'],
+		queryFn: () => {
+			const session = new Session(baseUrl, apiKey);
+			return session.getMineAllDocumentLabels();
+		},
+		enabled: !!baseUrl && !!apiKey,
+	});
+
+	const { data: sections } = useQuery({
+		queryKey: ['getMineDocumentSections'],
+		queryFn: () => {
+			const session = new Session(baseUrl, apiKey);
+			return session.getMineAllSection();
+		},
+		enabled: !!baseUrl && !!apiKey,
+	});
+
+	const getLabelByValue = (value: number): Option | undefined => {
+		if (!labels) return;
+		return labels.data.data
+			.map((label) => {
+				return { label: label.name, value: label.id };
+			})
+			.find((label) => label.value === value);
+	};
+
+	const getSectionByValue = (value: number): Option | undefined => {
+		if (!sections) return;
+		return sections.data.data
+			.map((section) => {
+				return { label: section.title, value: section.id };
+			})
+			.find((section) => section.value === value);
+	};
 
 	const handleGetPageData = async () => {
 		const [tab] = await chrome.tabs.query({
@@ -162,6 +201,76 @@ const CreateDocument = () => {
 							);
 						}}
 					/>
+					{labels ? (
+						<FormField
+							control={form.control}
+							name='labels'
+							render={({ field }) => {
+								return (
+									<FormItem>
+										<FormLabel>Label</FormLabel>
+										<MultipleSelector
+											defaultOptions={labels.data.data.map((label) => {
+												return { label: label.name, value: label.id };
+											})}
+											onChange={(value) => {
+												field.onChange(value.map(({ value }) => value));
+											}}
+											value={
+												field.value &&
+												field.value
+													.map((id) => getLabelByValue(id))
+													.filter((option) => !!option)
+											}
+											emptyIndicator={
+												<p className='text-center text-sm leading-10 text-gray-600 dark:text-gray-400'>
+													Empty for now
+												</p>
+											}
+										/>
+										<FormMessage />
+									</FormItem>
+								);
+							}}
+						/>
+					) : (
+						<Skeleton className='h-10' />
+					)}
+					{sections ? (
+						<FormField
+							control={form.control}
+							name='sections'
+							render={({ field }) => {
+								return (
+									<FormItem>
+										<FormLabel>Section</FormLabel>
+										<MultipleSelector
+											defaultOptions={sections.data.data.map((section) => {
+												return { label: section.title, value: section.id };
+											})}
+											onChange={(value) => {
+												field.onChange(value.map(({ value }) => value));
+											}}
+											value={
+												field.value &&
+												field.value
+													.map((id) => getSectionByValue(id))
+													.filter((option) => !!option)
+											}
+											emptyIndicator={
+												<p className='text-center text-sm leading-10 text-gray-600 dark:text-gray-400'>
+													Empty for now
+												</p>
+											}
+										/>
+										<FormMessage />
+									</FormItem>
+								);
+							}}
+						/>
+					) : (
+						<Skeleton className='h-10' />
+					)}
 				</form>
 			</Form>
 			<div className='flex justify-end gap-3'>
