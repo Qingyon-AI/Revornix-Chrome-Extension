@@ -11,17 +11,17 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Textarea } from '@/components/ui/textarea';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Session } from 'revornix';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAppProvider } from '@/provider/app-provider';
 
 const CreateDocument = () => {
-	const [baseUrl, setBaseUrl] = useState('');
-	const [apiKey, setApiKey] = useState('');
+	const { baseUrl, apiKey } = useAppProvider();
 
 	const formSchema = z.object({
 		url: z.url(),
@@ -129,10 +129,6 @@ const CreateDocument = () => {
 
 	useEffect(() => {
 		handleGetPageData();
-		chrome.storage.local.get(['baseUrl', 'apiKey'], (result) => {
-			setBaseUrl(result.baseUrl);
-			setApiKey(result.apiKey);
-		});
 	}, []);
 
 	return (

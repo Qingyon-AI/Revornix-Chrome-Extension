@@ -10,12 +10,16 @@ import {
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
+import { useAppProvider } from '@/provider/app-provider';
 
 const ConfigForm = () => {
+	const [submitting, setSubmitting] = useState(false);
+	const { setBaseUrl, setApiKey, baseUrl, apiKey } = useAppProvider();
+
 	const formSchema = z.object({
 		baseUrl: z.url(),
 		apiKey: z.string(),
@@ -24,28 +28,24 @@ const ConfigForm = () => {
 	const form = useForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			baseUrl: '',
-			apiKey: '',
+			baseUrl: baseUrl,
+			apiKey: apiKey,
 		},
 	});
 
-	// ✅ 从 chrome.storage 加载默认值
-	useEffect(() => {
-		chrome.storage.local.get(['baseUrl', 'apiKey'], (result) => {
-			form.reset({
-				baseUrl: result.baseUrl || '',
-				apiKey: result.apiKey || '',
-			});
-		});
-	}, []);
-
-	// ✅ 保存到 chrome.storage.local
 	const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+		setSubmitting(true);
 		chrome.storage.local.set(data, () => {
-			console.log('保存成功:', data);
-			toast.success('保存成功');
+			setBaseUrl(data.baseUrl);
+			setApiKey(data.apiKey);
+			setSubmitting(false);
+			toast.success('Save Successfully');
 		});
 	};
+
+	useEffect(() => {
+		form.reset({ baseUrl, apiKey });
+	}, [baseUrl, apiKey]);
 
 	return (
 		<div className='p-5'>
@@ -102,8 +102,9 @@ const ConfigForm = () => {
 					</form>
 				</Form>
 				<div className='flex justify-end gap-3'>
-					<Button type='submit' form='update-form'>
+					<Button type='submit' form='update-form' disabled={submitting}>
 						Save
+						{submitting && <Loader2 className='ml-2 h-4 w-4 animate-spin' />}
 					</Button>
 				</div>
 			</div>

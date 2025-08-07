@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import CreateDocument from './create-document';
-import RootLayout from '../options/layout';
+import RootLayout from './layout';
 
 export function App() {
 	return (
