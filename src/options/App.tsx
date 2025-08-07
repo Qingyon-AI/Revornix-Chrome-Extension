@@ -1,11 +1,12 @@
 import ReactDOM from 'react-dom/client';
-import CreateDocument from './create-document';
 import RootLayout from './layout';
+import ConfigForm from './config-form';
 
 export function App() {
+	
 	return (
 		<RootLayout>
-			<CreateDocument />
+			<ConfigForm />
 		</RootLayout>
 	);
 }

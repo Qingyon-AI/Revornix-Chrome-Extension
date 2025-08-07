@@ -3,6 +3,7 @@
     "description": "The chrome extension for Revornix.",
     "version": "0.0.1",
     "manifest_version": 3,
+    "options_page": "src/options/index.html",
     "action": {
         "default_popup": "src/popup/index.html",
         "default_icon": "icon.png"

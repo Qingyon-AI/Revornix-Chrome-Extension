@@ -14,7 +14,8 @@ export default defineConfig({
       input: {
         background: resolve(__dirname, 'src/background.ts'),
         content: resolve(__dirname, 'src/content.ts'),
-        popup: resolve(__dirname, 'src/popup/index.html') // 页面入口
+        popup: resolve(__dirname, 'src/popup/index.html'),
+        options: resolve(__dirname, 'src/options/index.html'),
       },
       output: {
         entryFileNames: '[name].js',          // 没有 hash
