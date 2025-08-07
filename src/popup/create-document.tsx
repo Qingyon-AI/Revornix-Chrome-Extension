@@ -39,6 +39,7 @@ const CreateDocument = () => {
 			url: '',
 			sections: [],
 			auto_summary: false,
+			labels: [],
 		},
 	});
 
