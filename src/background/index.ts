@@ -2,14 +2,14 @@
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: 'revornix-context-menu-selection',
-    title: 'Save content to Revornix',
-    contexts: ['selection']
-  });
-  chrome.contextMenus.create({
     id: 'revornix-context-menu-page',
     title: 'Save page to Revornix',
     contexts: ['page']
+  });
+  chrome.contextMenus.create({
+    id: 'revornix-context-menu-selection',
+    title: 'Save content to Revornix',
+    contexts: ['selection']
   });
   chrome.contextMenus.create({
     id: 'revornix-context-menu-link',
@@ -18,54 +18,56 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   chrome.contextMenus.create({
     id: 'revornix-context-menu-image',
-    title: 'Save file to Revornix',
+    title: 'Save image to Revornix',
     contexts: ["image"]
   });
 
   chrome.runtime.openOptionsPage();
 });
 
-
-function extractCoverImage(): string | null {
-  const og = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
-  if (og) return og;
-
-  const twitter = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content');
-  if (twitter) return twitter;
-
-  const imgs = Array.from(document.images || []);
-  const biggest = imgs.sort((a, b) => (b.naturalWidth * b.naturalHeight) - (a.naturalWidth * a.naturalHeight))[0];
-  return biggest?.src || null;
-}
-
-function extractPageDescription(): string | null {
-  const desc = document.querySelector('meta[name="description"]')?.getAttribute('content');
-  if (desc) return desc;
-
-  const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content');
-  if (ogDesc) return ogDesc;
-
-  return null;
-}
-
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+
   if (!tab || !tab.id) return;
+
   switch (info.menuItemId) {
+
     case "revornix-context-menu-page":
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          const data = {
-            url: tab.url,
-            title: document.title,
-            description: extractPageDescription(),
-            cover: extractCoverImage(),
-          };
-          chrome.runtime.sendMessage({ type: 'SHARE_PAGE', payload: data });
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'SHARE_PAGE_TO_REVORNIX',
+        payload: { url: tab.url }
+      });
+      break;
+
+    case "revornix-context-menu-selection":
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'SHARE_SELECTION_TO_REVORNIX',
+        payload: {
+          url: tab.url,
+          text: info.selectionText // 这里就是选中的文字
         }
       });
       break;
+
+    case "revornix-context-menu-link":
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'SHARE_LINK_TO_REVORNIX',
+        payload: {
+          url: info.linkUrl // 链接的真实地址
+        }
+      });
+      break;
+
+    case "revornix-context-menu-image":
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'SHARE_IMAGE_TO_REVORNIX',
+        payload: {
+          url: info.srcUrl // 图片的真实地址
+        }
+      });
+      break;
+
     default:
       break;
+
   }
 });

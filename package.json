@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:main": "vite build --config vite.config.ts",
+    "build:content": "vite build --config vite.config.content.ts",
+    "build:merge": "mkdir -p dist && cp -r dist-main/* dist/ && cp dist-content/content.js dist/",
+    "build": "pnpm build:main && pnpm build:content && pnpm build:merge",
     "preview": "vite preview"
   },
   "dependencies": {
