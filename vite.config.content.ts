@@ -15,7 +15,7 @@ export default defineConfig({
     target: 'esnext',
     rollupOptions: {
       input: {
-        content: resolve(__dirname, 'src/content/index.ts'),
+        content: resolve(__dirname, 'src/content/index.tsx'),
       },
       output: {
         entryFileNames: '[name].js',
