@@ -14,7 +14,7 @@ const RootLayout = ({
 			<ThemeProvider defaultTheme='system' storageKey='vite-ui-theme'>
 				<ReactQueryProvider>
 					<AppProvider>
-						<Toaster position='top-right' />
+						<Toaster position='top-right' richColors />
 						{children}
 					</AppProvider>
 				</ReactQueryProvider>

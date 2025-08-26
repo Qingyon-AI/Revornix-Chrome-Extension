@@ -4,9 +4,6 @@ The chrome extension for Revornix.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Qingyon-AI/Revornix)
 
-> [!WARNING]
-> As an open source plugin adapted for the Revornix project, I do not plan to publish it on the Google Extension Market! Any broswer extension that requires you to pay is not an official Revornix plugin that I developed, please be careful and beware of fraud!
-
 ## Full Revornix Docker App
 
 https://github.com/Qingyon-AI/Revornix

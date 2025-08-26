@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import { toast } from 'sonner';
-import { Toaster } from '@/components/ui/sonner';
-import Logo from '@/components/logo';
-import { extractCoverImage, extractPageDescription } from '@/lib/utils';
-import { Session } from 'revornix';
+// import { Button } from '@/components/ui/button';
+// import ReactDOM from 'react-dom/client';
+// import './index.css';
+// import { toast } from 'sonner';
+// import { Toaster } from '@/components/ui/sonner';
+// import Logo from '@/components/logo';
+// import { extractCoverImage, extractPageDescription } from '@/lib/utils';
+// import { Session } from 'revornix';
 
 // const Clipper = () => {
 // 	const handleClick = async () => {
