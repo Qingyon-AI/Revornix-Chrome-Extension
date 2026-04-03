@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import widgetStyles from './index.css?inline';
 import {
 	ChevronUp,
+	FileText,
 	Languages,
 	LoaderCircle,
 	PanelRightClose,
@@ -22,9 +23,6 @@ import {
 import { Switch } from '@/components/ui/switch';
 import {
 	appendTranslationLog,
-	readTranslationLogs,
-	TRANSLATION_LOGS_KEY,
-	type TranslationLogEntry,
 } from '@/lib/logging';
 import { formatCopy, getUiCopy } from '@/lib/ui-copy';
 import { DEFAULT_UI_LANGUAGE, DEFAULT_UI_THEME, resolveUiTheme, type UiLanguage, type UiTheme } from '@/lib/ui-preferences';
@@ -152,7 +150,6 @@ function FloatingTranslationWidgetApp({
 	const [movedDuringPointer, setMovedDuringPointer] = useState(false);
 	const [translatorState, setTranslatorState] = useState(pageTranslator.getState());
 	const [selectContainer, setSelectContainer] = useState<HTMLElement | null>(null);
-	const [logs, setLogs] = useState<TranslationLogEntry[]>([]);
 	const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 	const [currentUrl, setCurrentUrl] = useState(window.location.href);
 	const [revornixPanelOpen, setRevornixPanelOpen] = useState(false);
@@ -306,29 +303,6 @@ function FloatingTranslationWidgetApp({
 	}, []);
 
 	useEffect(() => {
-		void readTranslationLogs().then((nextLogs) => {
-			setLogs(nextLogs.slice(-8).reverse());
-		});
-
-		const handleStorageChange = (
-			changes: { [key: string]: chrome.storage.StorageChange },
-			areaName: string
-		) => {
-			if (areaName !== 'local' || !changes[TRANSLATION_LOGS_KEY]) {
-				return;
-			}
-
-			const nextLogs = (changes[TRANSLATION_LOGS_KEY].newValue || []) as TranslationLogEntry[];
-			setLogs(nextLogs.slice(-8).reverse());
-		};
-
-		chrome.storage.onChanged.addListener(handleStorageChange);
-		return () => {
-			chrome.storage.onChanged.removeListener(handleStorageChange);
-		};
-	}, []);
-
-	useEffect(() => {
 		if (!settings.autoTranslateCurrentSite) {
 			lastAutoTranslatedUrlRef.current = null;
 		}
@@ -434,10 +408,10 @@ function FloatingTranslationWidgetApp({
 	const shortcutXOffset = shortcutDirectionX * 58;
 	const shortcutYOffsets =
 		orbitVerticalMode === 'down'
-			? [0, 42, 84]
+			? [-21, 21, 63, 105]
 			: orbitVerticalMode === 'up'
-				? [-84, -42, 0]
-				: [-42, 0, 42];
+				? [-105, -63, -21, 21]
+				: [-63, -21, 21, 63];
 	const translationShortcutStyle =
 		{
 			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[0]}px)`,
@@ -449,6 +423,10 @@ function FloatingTranslationWidgetApp({
 	const settingsShortcutStyle =
 		{
 			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[2]}px)`,
+		};
+	const logsShortcutStyle =
+		{
+			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[3]}px)`,
 		};
 	const panelMaxHeight = Math.min(Math.round(window.innerHeight * 0.7), 560);
 	const floatingButtonSize = 40;
@@ -627,7 +605,7 @@ function FloatingTranslationWidgetApp({
 							setShortcutExpanded(false);
 						}
 					}}>
-					<div className="pointer-events-none absolute left-1/2 top-1/2 h-[220px] w-[160px] -translate-x-1/2 -translate-y-1/2">
+					<div className="pointer-events-none absolute left-1/2 top-1/2 h-[280px] w-[160px] -translate-x-1/2 -translate-y-1/2">
 						<div
 							className={`absolute inset-0 transition-opacity duration-200 ${
 								shortcutExpanded
@@ -697,11 +675,37 @@ function FloatingTranslationWidgetApp({
 							}}>
 							<Settings2 className="size-4" />
 						</Button>
+						<Button
+							type="button"
+							size="icon"
+							variant="secondary"
+							className="absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-background/95 shadow-xl transition-[transform,opacity] duration-200"
+							style={logsShortcutStyle}
+							onMouseEnter={cancelCloseTimer}
+							onPointerDown={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+							}}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								cancelCloseTimer();
+								setShortcutExpanded(false);
+								setExpanded(false);
+								void chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE', tab: 'logs' });
+								void appendTranslationLog({
+									level: 'info',
+									scope: 'ui',
+									message: copy.logsPageOpened,
+								});
+							}}>
+							<FileText className="size-4" />
+						</Button>
 					</div>
 					</div>
 					<div
 						data-state={expanded ? 'open' : 'closed'}
-						className={`absolute z-30 w-[280px] rounded-2xl border bg-background/95 p-3 shadow-2xl backdrop-blur transition-[opacity,transform] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ${panelVerticalAnimationClass} ${
+						className={`absolute z-30 w-[280px] rounded-[24px] p-3 shadow-[0_22px_56px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)] transition-[opacity,transform,background-color,border-color,backdrop-filter] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ${panelVerticalAnimationClass} ${
 							settings.translationFloatingBallSide === 'left'
 								? 'left-[52px]'
 								: 'right-[52px]'
@@ -711,6 +715,16 @@ function FloatingTranslationWidgetApp({
 						style={{
 							top: `${panelRelativeTop}px`,
 							maxHeight: `${panelMaxHeight}px`,
+							backgroundColor:
+								resolvedTheme === 'dark'
+									? 'rgba(30, 33, 40, 0.72)'
+									: 'rgba(255, 255, 255, 0.78)',
+							border: `1px solid ${
+								resolvedTheme === 'dark'
+									? 'rgba(255,255,255,0.08)'
+									: 'rgba(15,23,42,0.08)'
+							}`,
+							backdropFilter: 'blur(20px) saturate(1.08)',
 						}}
 						onMouseEnter={() => {
 							cancelCloseTimer();
@@ -784,43 +798,26 @@ function FloatingTranslationWidgetApp({
 								<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
 									{copy.displayMode}
 								</div>
-							<div className="grid grid-cols-2 gap-2">
-								<Button
-									type="button"
-									size="sm"
-									variant={
-										settings.translationDisplayMode === 'translated-only'
-											? 'default'
-											: 'outline'
-									}
-										onClick={() => {
-											void persistSetting(
-												'translationDisplayMode',
-												'translated-only'
-											);
-											void updateSiteRule({
-												displayMode: 'translated-only',
-											});
-											pageTranslator.setDisplayMode('translated-only');
-										}}>
-										{copy.translatedOnly}
-								</Button>
-								<Button
-									type="button"
-									size="sm"
-									variant={
-										settings.translationDisplayMode === 'bilingual'
-											? 'default'
-											: 'outline'
-									}
-										onClick={() => {
-											void persistSetting('translationDisplayMode', 'bilingual');
-											void updateSiteRule({ displayMode: 'bilingual' });
-											pageTranslator.setDisplayMode('bilingual');
-										}}>
-										{copy.bilingual}
-								</Button>
-							</div>
+								<Select
+									value={settings.translationDisplayMode}
+									onValueChange={(value) => {
+										const nextMode = value as TranslationDisplayMode;
+										void persistSetting('translationDisplayMode', nextMode);
+										void updateSiteRule({ displayMode: nextMode });
+										pageTranslator.setDisplayMode(nextMode);
+									}}>
+									<SelectTrigger className="w-full" size="sm">
+										<SelectValue placeholder={copy.displayMode} />
+									</SelectTrigger>
+									<SelectContent container={selectContainer}>
+										<SelectItem value="translated-only">
+											{copy.translatedOnly}
+										</SelectItem>
+										<SelectItem value="bilingual">
+											{copy.bilingual}
+										</SelectItem>
+									</SelectContent>
+								</Select>
 						</div>
 
 							<div className="flex items-center justify-between rounded-lg border px-3 py-2">
@@ -891,17 +888,6 @@ function FloatingTranslationWidgetApp({
 								</Button>
 							</div>
 
-							<Button
-								type="button"
-								size="sm"
-								variant="secondary"
-								className="w-full"
-								onClick={() => {
-									void chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE' });
-								}}>
-								<Settings2 />
-								{copy.openSettings}
-							</Button>
 							<div className="text-[11px] text-muted-foreground">
 								{translatorState.status === 'translating'
 									? formatCopy(copy.translatingProgress, {
@@ -940,68 +926,6 @@ function FloatingTranslationWidgetApp({
 													count: translatorState.totalNodes,
 												})
 											: copy.progressHint}
-								</div>
-							</div>
-							<div className="min-w-0 space-y-1.5 rounded-xl border bg-muted/30 p-2 pb-3">
-									<div className="flex items-center justify-between">
-										<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-											{copy.translationLogs}
-										</div>
-										<div className="flex items-center gap-2">
-											<Button
-												type="button"
-												size="sm"
-												variant="ghost"
-												className="h-6 px-2 text-[10px]"
-												onClick={() => {
-													void chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE', tab: 'logs' });
-													void appendTranslationLog({
-														level: 'info',
-														scope: 'ui',
-														message: copy.logsPageOpened,
-													});
-												}}>
-												{copy.openLogs}
-											</Button>
-											<div className="text-[10px] text-muted-foreground">
-												{formatCopy(copy.recentLogs, { count: logs.length })}
-											</div>
-										</div>
-									</div>
-									<div className="min-w-0 max-h-28 space-y-1 overflow-x-hidden overflow-y-auto pr-1 pb-1">
-										{logs.length === 0 ? (
-											<div className="text-[11px] text-muted-foreground">
-												{copy.recentLogsEmpty}
-											</div>
-										) : (
-										logs.map((log) => (
-											<div
-												key={log.id}
-												className="min-w-0 rounded-md bg-background/80 px-2 py-1.5 text-[10px] leading-4">
-												<div className="flex min-w-0 items-start justify-between gap-2">
-													<span className="min-w-0 break-words font-medium text-foreground">
-														[{log.scope}] {log.message}
-													</span>
-														<span className="shrink-0 text-muted-foreground">
-															{new Date(log.timestamp).toLocaleTimeString(
-																settings.uiLanguage === 'en' ? 'en-US' : 'zh-CN',
-																{
-																hour: '2-digit',
-																minute: '2-digit',
-																second: '2-digit',
-																hour12: false,
-																}
-															)}
-														</span>
-												</div>
-												{log.details ? (
-													<div className="mt-1 break-all text-muted-foreground">
-														{log.details}
-													</div>
-												) : null}
-											</div>
-										))
-									)}
 								</div>
 							</div>
 						</div>
