@@ -63,6 +63,7 @@ export interface TranslationSettings {
 export interface TranslationItem {
 	id: string;
 	text: string;
+	context?: string;
 }
 
 export interface TranslationRequestMessage {

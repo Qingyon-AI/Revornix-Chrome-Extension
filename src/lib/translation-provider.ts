@@ -109,7 +109,7 @@ async function translateWithOpenAICompatible(
 			messages: [
 				{
 					role: 'system',
-					content: `You are a webpage translator. Translate each text into ${targetLanguage} while preserving meaning, tone, markdown-like symbols, and surrounding whitespace. Return JSON only in the form {"translations":[{"id":"...","text":"..."}]}. Do not omit any item and do not add explanations.`,
+					content: `You are a webpage translator. Translate each text into ${targetLanguage} while preserving meaning, tone, markdown-like symbols, and surrounding whitespace. If an item includes "context", use it to disambiguate the selected text semantically, but translate only the item's "text" field. Return JSON only in the form {"translations":[{"id":"...","text":"..."}]}. Do not omit any item and do not add explanations.`,
 				},
 				{
 					role: 'user',

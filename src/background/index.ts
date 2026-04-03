@@ -31,6 +31,8 @@ const CONTEXT_MENU_IDS = {
 interface TranslationCacheEntry {
 	sourceText: string;
 	normalizedSourceText?: string;
+	sourceContext?: string;
+	normalizedSourceContext?: string;
 	translatedText: string;
 	updatedAt: number;
 }
@@ -248,12 +250,23 @@ async function translateItems(
 	for (const item of items) {
 		itemById.set(item.id, item);
 		const normalizedText = normalizeTranslationCacheText(item.text);
-		const cacheKey = buildTranslationCacheKey(normalizedText, target, resolvedModel);
-		const legacyCacheKey = buildTranslationCacheKey(item.text, target, resolvedModel);
+		const normalizedContext = normalizeTranslationCacheText(item.context || '');
+		const cacheKey = buildTranslationCacheKey(
+			normalizedText,
+			normalizedContext,
+			target,
+			resolvedModel
+		);
+		const legacyCacheKey = buildTranslationCacheKey(
+			item.text,
+			item.context || '',
+			target,
+			resolvedModel
+		);
 		const cachedEntry = cacheStore[cacheKey] || cacheStore[legacyCacheKey];
 		if (
 			cachedEntry &&
-			isMatchingCacheEntry(cachedEntry, item.text, normalizedText) &&
+			isMatchingCacheEntry(cachedEntry, item.text, normalizedText, item.context || '', normalizedContext) &&
 			now - cachedEntry.updatedAt <= TRANSLATION_CACHE_TTL_MS
 		) {
 			results.set(item.id, cachedEntry.translatedText);
@@ -320,9 +333,19 @@ async function translateItems(
 			continue;
 		}
 		const normalizedSourceText = normalizeTranslationCacheText(sourceItem.text);
-		cacheStore[buildTranslationCacheKey(normalizedSourceText, target, resolvedModel)] = {
+		const normalizedSourceContext = normalizeTranslationCacheText(sourceItem.context || '');
+		cacheStore[
+			buildTranslationCacheKey(
+				normalizedSourceText,
+				normalizedSourceContext,
+				target,
+				resolvedModel
+			)
+		] = {
 			sourceText: sourceItem.text,
 			normalizedSourceText,
+			sourceContext: sourceItem.context || '',
+			normalizedSourceContext,
 			translatedText: item.text,
 			updatedAt: now,
 		};
@@ -334,6 +357,7 @@ async function translateItems(
 		}
 		const cacheKey = buildTranslationCacheKey(
 			normalizeTranslationCacheText(item.text),
+			normalizeTranslationCacheText(item.context || ''),
 			target,
 			resolvedModel
 		);
@@ -405,8 +429,13 @@ async function saveTranslationCacheStore(cacheStore: TranslationCacheStore, now:
 	});
 }
 
-function buildTranslationCacheKey(text: string, targetLanguage: string, model: string) {
-	return `${model}::${targetLanguage}::${hashTranslationText(text)}`;
+function buildTranslationCacheKey(
+	text: string,
+	context: string,
+	targetLanguage: string,
+	model: string
+) {
+	return `${model}::${targetLanguage}::${hashTranslationText(`${text}@@${context}`)}`;
 }
 
 function normalizeTranslationCacheText(text: string) {
@@ -416,17 +445,28 @@ function normalizeTranslationCacheText(text: string) {
 function isMatchingCacheEntry(
 	entry: TranslationCacheEntry,
 	sourceText: string,
-	normalizedSourceText: string
+	normalizedSourceText: string,
+	sourceContext: string,
+	normalizedSourceContext: string
 ) {
-	if (entry.sourceText === sourceText) {
+	if (
+		entry.sourceText === sourceText &&
+		(entry.sourceContext || '') === sourceContext
+	) {
 		return true;
 	}
 
 	if (entry.normalizedSourceText) {
-		return entry.normalizedSourceText === normalizedSourceText;
+		return (
+			entry.normalizedSourceText === normalizedSourceText &&
+			(entry.normalizedSourceContext || '') === normalizedSourceContext
+		);
 	}
 
-	return normalizeTranslationCacheText(entry.sourceText) === normalizedSourceText;
+	return (
+		normalizeTranslationCacheText(entry.sourceText) === normalizedSourceText &&
+		normalizeTranslationCacheText(entry.sourceContext || '') === normalizedSourceContext
+	);
 }
 
 function hashTranslationText(text: string) {
