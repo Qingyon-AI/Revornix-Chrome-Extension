@@ -87,6 +87,7 @@ const ConfigForm = () => {
 			translationFloatingBallEnabled: translationFloatingBallEnabled,
 		},
 	});
+	const selectedTranslationProvider = form.watch('translationProvider');
 
 	const handleSubmit = async (data: z.infer<typeof formSchema>) => {
 		setSubmitting(true);
@@ -230,53 +231,56 @@ const ConfigForm = () => {
 									);
 								}}
 							/>
-							<FormField
-								name='translationBaseUrl'
-								control={form.control}
-								render={({ field }) => {
-									return (
-										<FormItem>
-												<FormLabel>{copy.translationBaseUrl}</FormLabel>
-											<Input {...field} placeholder='https://api.openai.com/v1' />
-											<FormMessage />
-										</FormItem>
-									);
-								}}
-							/>
-							<FormField
-								name='translationModel'
-								control={form.control}
-								render={({ field }) => {
-									return (
-										<FormItem>
-											<FormLabel>{copy.translationModel}</FormLabel>
-											<Input
-												{...field}
-												placeholder='gpt-4.1-mini'
-												disabled={form.watch('translationProvider') !== 'openai-compatible'}
-											/>
-											<FormMessage />
-										</FormItem>
-									);
-								}}
-							/>
-							<FormField
-								name='translationApiKey'
-								control={form.control}
-								render={({ field }) => {
-									return (
-										<FormItem>
-												<FormLabel>{copy.translationApiKey}</FormLabel>
-											<Input
-												{...field}
-												type='password'
-												placeholder='sk-...'
-											/>
-											<FormMessage />
-										</FormItem>
-									);
-								}}
-							/>
+							{selectedTranslationProvider === 'openai-compatible' ? (
+								<>
+									<FormField
+										name='translationBaseUrl'
+										control={form.control}
+										render={({ field }) => {
+											return (
+												<FormItem>
+													<FormLabel>{copy.translationBaseUrl}</FormLabel>
+													<Input {...field} placeholder='https://api.openai.com/v1' />
+													<FormMessage />
+												</FormItem>
+											);
+										}}
+									/>
+									<FormField
+										name='translationModel'
+										control={form.control}
+										render={({ field }) => {
+											return (
+												<FormItem>
+													<FormLabel>{copy.translationModel}</FormLabel>
+													<Input
+														{...field}
+														placeholder='gpt-4.1-mini'
+													/>
+													<FormMessage />
+												</FormItem>
+											);
+										}}
+									/>
+									<FormField
+										name='translationApiKey'
+										control={form.control}
+										render={({ field }) => {
+											return (
+												<FormItem>
+													<FormLabel>{copy.translationApiKey}</FormLabel>
+													<Input
+														{...field}
+														type='password'
+														placeholder='sk-...'
+													/>
+													<FormMessage />
+												</FormItem>
+											);
+										}}
+									/>
+								</>
+							) : null}
 							<FormField
 								name='translationTargetLanguage'
 								control={form.control}

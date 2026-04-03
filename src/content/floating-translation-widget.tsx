@@ -434,10 +434,10 @@ function FloatingTranslationWidgetApp({
 	const shortcutXOffset = shortcutDirectionX * 58;
 	const shortcutYOffsets =
 		orbitVerticalMode === 'down'
-			? [18, 62]
+			? [0, 42, 84]
 			: orbitVerticalMode === 'up'
-				? [-62, -18]
-				: [-28, 28];
+				? [-84, -42, 0]
+				: [-42, 0, 42];
 	const translationShortcutStyle =
 		{
 			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[0]}px)`,
@@ -445,6 +445,10 @@ function FloatingTranslationWidgetApp({
 	const revornixShortcutStyle =
 		{
 			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[1]}px)`,
+		};
+	const settingsShortcutStyle =
+		{
+			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[2]}px)`,
 		};
 	const panelMaxHeight = Math.min(Math.round(window.innerHeight * 0.7), 560);
 	const floatingButtonSize = 40;
@@ -623,7 +627,7 @@ function FloatingTranslationWidgetApp({
 							setShortcutExpanded(false);
 						}
 					}}>
-					<div className="pointer-events-none absolute left-1/2 top-1/2 h-[180px] w-[160px] -translate-x-1/2 -translate-y-1/2">
+					<div className="pointer-events-none absolute left-1/2 top-1/2 h-[220px] w-[160px] -translate-x-1/2 -translate-y-1/2">
 						<div
 							className={`absolute inset-0 transition-opacity duration-200 ${
 								shortcutExpanded
@@ -671,6 +675,27 @@ function FloatingTranslationWidgetApp({
 								setRevornixPanelOpen(true);
 							}}>
 							<PanelRightClose className="size-4" />
+						</Button>
+						<Button
+							type="button"
+							size="icon"
+							variant="secondary"
+							className="absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-background/95 shadow-xl transition-[transform,opacity] duration-200"
+							style={settingsShortcutStyle}
+							onMouseEnter={cancelCloseTimer}
+							onPointerDown={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+							}}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								cancelCloseTimer();
+								setShortcutExpanded(false);
+								setExpanded(false);
+								void chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE' });
+							}}>
+							<Settings2 className="size-4" />
 						</Button>
 					</div>
 					</div>
