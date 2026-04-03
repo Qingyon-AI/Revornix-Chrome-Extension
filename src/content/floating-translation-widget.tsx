@@ -430,22 +430,24 @@ function FloatingTranslationWidgetApp({
 		{
 			transform: `translate(${shortcutXOffset}px, ${shortcutYOffsets[1]}px)`,
 		};
-	const panelVerticalPlacement =
-		floatingCenterTop < 220
+	const panelMaxHeight = Math.min(Math.round(window.innerHeight * 0.7), 560);
+	const floatingButtonSize = 40;
+	const panelVerticalAnchor =
+		floatingCenterTop < window.innerHeight * 0.33
 			? 'below'
-			: floatingCenterTop > window.innerHeight - 220
+			: floatingCenterTop > window.innerHeight * 0.67
 				? 'above'
 				: 'center';
-	const panelVerticalClass =
-		panelVerticalPlacement === 'below'
-			? 'top-0 translate-y-0'
-			: panelVerticalPlacement === 'above'
-				? 'bottom-0 translate-y-0'
-				: 'top-1/2 -translate-y-1/2';
+	const panelRelativeTop =
+		panelVerticalAnchor === 'below'
+			? 0
+			: panelVerticalAnchor === 'above'
+				? floatingButtonSize - panelMaxHeight
+				: floatingButtonSize / 2 - panelMaxHeight / 2;
 	const panelVerticalAnimationClass =
-		panelVerticalPlacement === 'below'
+		panelVerticalAnchor === 'below'
 			? 'data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2'
-			: panelVerticalPlacement === 'above'
+			: panelVerticalAnchor === 'above'
 				? 'data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2'
 				: settings.translationFloatingBallSide === 'left'
 					? 'data-[state=closed]:slide-out-to-left-2 data-[state=open]:slide-in-from-left-2'
@@ -655,13 +657,17 @@ function FloatingTranslationWidgetApp({
 					</div>
 					<div
 						data-state={expanded ? 'open' : 'closed'}
-						className={`absolute w-[280px] rounded-2xl border bg-background/95 p-3 shadow-2xl backdrop-blur transition-[opacity,transform] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ${panelVerticalClass} ${panelVerticalAnimationClass} ${
+						className={`absolute z-30 w-[280px] rounded-2xl border bg-background/95 p-3 shadow-2xl backdrop-blur transition-[opacity,transform] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 ${panelVerticalAnimationClass} ${
 							settings.translationFloatingBallSide === 'left'
 								? 'left-[52px]'
 								: 'right-[52px]'
 						} ${
 							expanded ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
 						}`}
+						style={{
+							top: `${panelRelativeTop}px`,
+							maxHeight: `${panelMaxHeight}px`,
+						}}
 						onMouseEnter={() => {
 							cancelCloseTimer();
 							setExpanded(true);
@@ -676,7 +682,9 @@ function FloatingTranslationWidgetApp({
 								{copy.widgetSubtitle}
 							</p>
 						</div>
-						<div className="max-h-[min(70vh,560px)] space-y-3 overflow-y-auto pr-1">
+						<div
+							className="space-y-3 overflow-y-auto px-0.5 pr-1"
+							style={{ maxHeight: `${panelMaxHeight - 72}px` }}>
 							<div className="space-y-1.5">
 								<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
 									{copy.targetLanguage}
@@ -918,7 +926,7 @@ function FloatingTranslationWidgetApp({
 											: copy.progressHint}
 								</div>
 							</div>
-							<div className="space-y-1.5 rounded-xl border bg-muted/30 p-2">
+							<div className="min-w-0 space-y-1.5 rounded-xl border bg-muted/30 p-2 pb-3">
 									<div className="flex items-center justify-between">
 										<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
 											{copy.translationLogs}
@@ -944,7 +952,7 @@ function FloatingTranslationWidgetApp({
 											</div>
 										</div>
 									</div>
-									<div className="max-h-28 space-y-1 overflow-y-auto pr-1">
+									<div className="min-w-0 max-h-28 space-y-1 overflow-x-hidden overflow-y-auto pr-1 pb-1">
 										{logs.length === 0 ? (
 											<div className="text-[11px] text-muted-foreground">
 												{copy.recentLogsEmpty}
@@ -953,9 +961,9 @@ function FloatingTranslationWidgetApp({
 										logs.map((log) => (
 											<div
 												key={log.id}
-												className="rounded-md bg-background/80 px-2 py-1.5 text-[10px] leading-4">
-												<div className="flex items-center justify-between gap-2">
-													<span className="font-medium text-foreground">
+												className="min-w-0 rounded-md bg-background/80 px-2 py-1.5 text-[10px] leading-4">
+												<div className="flex min-w-0 items-start justify-between gap-2">
+													<span className="min-w-0 break-words font-medium text-foreground">
 														[{log.scope}] {log.message}
 													</span>
 														<span className="shrink-0 text-muted-foreground">
@@ -971,7 +979,7 @@ function FloatingTranslationWidgetApp({
 														</span>
 												</div>
 												{log.details ? (
-													<div className="mt-1 break-words text-muted-foreground">
+													<div className="mt-1 break-all text-muted-foreground">
 														{log.details}
 													</div>
 												) : null}

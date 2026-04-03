@@ -27,9 +27,76 @@ export interface RevornixWebsiteDocumentDetail {
 	cover?: string | null;
 	labels?: RevornixDocumentLabel[];
 	sections?: RevornixSectionInfo[];
+	creator?: {
+		id?: number;
+		nickname?: string | null;
+		avatar?: string | null;
+	} | null;
 	website_info?: {
 		url: string;
 	} | null;
+	audio_info?: RevornixAudioInfo | null;
+	process_task?: RevornixProcessTask | null;
+	graph_task?: RevornixGraphTask | null;
+	podcast_task?: RevornixPodcastTask | null;
+}
+
+export interface RevornixAudioInfo {
+	audio_file_name: string;
+}
+
+export interface RevornixGraphTask {
+	status: number;
+	create_time?: string | null;
+	update_time?: string | null;
+}
+
+export interface RevornixProcessTask {
+	status: number;
+	create_time?: string | null;
+	update_time?: string | null;
+}
+
+export interface RevornixPodcastTask {
+	status: number;
+	podcast_file_name: string | null;
+	create_time?: string | null;
+	update_time?: string | null;
+}
+
+export interface RevornixGraphNode {
+	id: string;
+	text: string;
+	degree?: number;
+	sources?: Array<{
+		doc_id?: number;
+		doc_title?: string | null;
+		chunk_id?: string | null;
+	}>;
+}
+
+export interface RevornixGraphEdge {
+	src_node: string;
+	tgt_node: string;
+}
+
+export interface RevornixGraphResponse {
+	nodes: RevornixGraphNode[];
+	edges: RevornixGraphEdge[];
+}
+
+export interface RevornixDocumentNote {
+	id: number;
+	content: string;
+	user?: {
+		id?: number;
+		name?: string | null;
+		nickname?: string | null;
+		email?: string | null;
+		avatar?: string | null;
+	} | null;
+	create_time: string;
+	update_time?: string | null;
 }
 
 export interface CreateDocumentPayload {
@@ -149,6 +216,21 @@ export async function getDocumentDetail(
 	});
 }
 
+export async function getDocumentDetailByUrl(
+	baseUrl: string,
+	apiKey: string,
+	url: string
+) {
+	return requestRevornix<RevornixWebsiteDocumentDetail>({
+		baseUrl,
+		apiKey,
+		path: '/tp/document/detail',
+		body: {
+			url,
+		},
+	});
+}
+
 export async function updateDocument(
 	baseUrl: string,
 	apiKey: string,
@@ -168,6 +250,90 @@ export async function updateDocument(
 		baseUrl,
 		apiKey,
 		path: '/tp/document/update',
+		body: payload,
+	});
+}
+
+export async function createDocumentNote(
+	baseUrl: string,
+	apiKey: string,
+	payload: {
+		document_id: number;
+		content: string;
+	}
+) {
+	return requestRevornix<{ success?: boolean; message?: string }>({
+		baseUrl,
+		apiKey,
+		path: '/tp/document/note/create',
+		body: payload,
+	});
+}
+
+export async function getDocumentGraph(
+	baseUrl: string,
+	apiKey: string,
+	documentId: number
+) {
+	return requestRevornix<RevornixGraphResponse>({
+		baseUrl,
+		apiKey,
+		path: '/tp/graph/document',
+		body: {
+			document_id: documentId,
+		},
+	});
+}
+
+export async function generateDocumentGraph(
+	baseUrl: string,
+	apiKey: string,
+	documentId: number
+) {
+	return requestRevornix<{ success?: boolean; message?: string }>({
+		baseUrl,
+		apiKey,
+		path: '/tp/document/graph/generate',
+		body: {
+			document_id: documentId,
+		},
+	});
+}
+
+export async function generateDocumentPodcast(
+	baseUrl: string,
+	apiKey: string,
+	documentId: number
+) {
+	return requestRevornix<{ success?: boolean; message?: string }>({
+		baseUrl,
+		apiKey,
+		path: '/tp/document/podcast/generate',
+		body: {
+			document_id: documentId,
+		},
+	});
+}
+
+export async function searchDocumentNotes(
+	baseUrl: string,
+	apiKey: string,
+	payload: {
+		document_id: number;
+		keyword?: string;
+		start?: number;
+		limit?: number;
+	}
+) {
+	return requestRevornix<{
+		total: number;
+		elements: RevornixDocumentNote[];
+		has_more: boolean;
+		next_start?: number | null;
+	}>({
+		baseUrl,
+		apiKey,
+		path: '/tp/document/note/search',
 		body: payload,
 	});
 }
