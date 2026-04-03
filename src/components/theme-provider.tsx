@@ -45,7 +45,30 @@ export function ThemeProvider({
 			return;
 		}
 
-		root.classList.add(theme);
+			root.classList.add(theme);
+		}, [theme]);
+
+	useEffect(() => {
+		if (typeof chrome === 'undefined' || !chrome.storage?.local) {
+			return;
+		}
+
+		void chrome.storage.local.set({ uiTheme: theme });
+
+		const handleStorageChange = (
+			changes: { [key: string]: chrome.storage.StorageChange },
+			areaName: string
+		) => {
+			if (areaName !== 'local' || !changes.uiTheme?.newValue) {
+				return;
+			}
+			setTheme(changes.uiTheme.newValue as Theme);
+		};
+
+		chrome.storage.onChanged.addListener(handleStorageChange);
+		return () => {
+			chrome.storage.onChanged.removeListener(handleStorageChange);
+		};
 	}, [theme]);
 
 	const value = {

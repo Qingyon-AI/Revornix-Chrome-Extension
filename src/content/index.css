@@ -41,7 +41,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
+.revornix-widget-scope {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -74,9 +74,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  color: var(--foreground);
 }
 
-.dark {
+.revornix-widget-scope.dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -111,10 +112,12 @@
 }
 
 @layer base {
-  * {
+  .revornix-widget-scope,
+  .revornix-widget-scope * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
+  .revornix-widget-scope {
+    background: transparent;
+    @apply text-foreground;
   }
 }

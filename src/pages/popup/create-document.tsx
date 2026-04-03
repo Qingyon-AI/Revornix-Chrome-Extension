@@ -11,17 +11,23 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Textarea } from '@/components/ui/textarea';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Session } from 'revornix';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppProvider } from '@/provider/app-provider';
+import {
+	createWebsiteDocument,
+	listDocumentLabels,
+	listMineSections,
+} from '@/lib/revornix-api';
 
 const CreateDocument = () => {
 	const { baseUrl, apiKey } = useAppProvider();
+	const [translatingPage, setTranslatingPage] = useState(false);
+	const [restoringPage, setRestoringPage] = useState(false);
 
 	const formSchema = z.object({
 		url: z.url(),
@@ -45,25 +51,19 @@ const CreateDocument = () => {
 
 	const { data: labels } = useQuery({
 		queryKey: ['getDocumentLabels'],
-		queryFn: () => {
-			const session = new Session(baseUrl, apiKey);
-			return session.getMineAllDocumentLabels();
-		},
+		queryFn: () => listDocumentLabels(baseUrl, apiKey),
 		enabled: !!baseUrl && !!apiKey,
 	});
 
 	const { data: sections } = useQuery({
 		queryKey: ['getMineDocumentSections'],
-		queryFn: () => {
-			const session = new Session(baseUrl, apiKey);
-			return session.getMineAllSection();
-		},
+		queryFn: () => listMineSections(baseUrl, apiKey),
 		enabled: !!baseUrl && !!apiKey,
 	});
 
 	const getLabelByValue = (value: number): Option | undefined => {
 		if (!labels) return;
-		return labels.data.data
+		return labels
 			.map((label) => {
 				return { label: label.name, value: label.id };
 			})
@@ -72,7 +72,7 @@ const CreateDocument = () => {
 
 	const getSectionByValue = (value: number): Option | undefined => {
 		if (!sections) return;
-		return sections.data.data
+		return sections
 			.map((section) => {
 				return { label: section.title, value: section.id };
 			})
@@ -92,25 +92,45 @@ const CreateDocument = () => {
 					chrome.runtime.lastError.message
 				);
 			} else {
+				if (!res) {
+					return;
+				}
 				console.log('收到数据：', res);
 				if (tab.url) {
 					form.setValue('url', tab.url);
 				}
-				form.setValue('title', res.title);
-				form.setValue('cover', res.cover);
-				form.setValue('description', res.description);
+				form.setValue('title', res.title || '');
+				form.setValue('cover', res.cover || '');
+				form.setValue('description', res.description || '');
 			}
 		});
 	};
 
+	const sendMessageToActiveTab = async (type: 'TRANSLATE_PAGE' | 'RESTORE_PAGE_TRANSLATION') => {
+		const [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true,
+		});
+		if (!tab?.id) {
+			throw new Error('No active tab found.');
+		}
+
+		const response = await chrome.tabs.sendMessage(tab.id, { type });
+		if (!response?.success) {
+			throw new Error(response?.error || 'Unable to communicate with page.');
+		}
+
+		return response;
+	};
+
 	const mutateCreateDocument = useMutation({
 		mutationFn: async (data: z.infer<typeof formSchema>) => {
-			const session = new Session(baseUrl, apiKey);
-			await session.createWebsiteDocument({
+			await createWebsiteDocument(baseUrl, apiKey, {
 				url: data.url,
 				title: data.title,
 				description: data.description,
 				cover: data.cover,
+				labels: data.labels,
 				sections: data.sections,
 				auto_summary: data.auto_summary,
 			});
@@ -148,15 +168,21 @@ const CreateDocument = () => {
 						render={({ field }) => {
 							return (
 								<FormItem>
-									<FormLabel>Cover</FormLabel>
-									<img
-										src={field.value}
-										alt='cover'
-										className='w-full h-32 rounded object-cover'
-									/>
-									<FormMessage />
-								</FormItem>
-							);
+										<FormLabel>Cover</FormLabel>
+										{field.value ? (
+											<img
+												src={field.value}
+												alt='cover'
+												className='w-full h-32 rounded object-cover'
+											/>
+										) : (
+											<div className='w-full h-32 rounded border border-dashed text-sm text-muted-foreground flex items-center justify-center'>
+												No cover image detected
+											</div>
+										)}
+										<FormMessage />
+									</FormItem>
+								);
 						}}
 					/>
 					<FormField
@@ -207,7 +233,7 @@ const CreateDocument = () => {
 									<FormItem>
 										<FormLabel>Label</FormLabel>
 										<MultipleSelector
-											defaultOptions={labels.data.data.map((label) => {
+											defaultOptions={labels.map((label) => {
 												return { label: label.name, value: label.id };
 											})}
 											onChange={(value) => {
@@ -242,7 +268,7 @@ const CreateDocument = () => {
 									<FormItem>
 										<FormLabel>Section</FormLabel>
 										<MultipleSelector
-											defaultOptions={sections.data.data.map((section) => {
+											defaultOptions={sections.map((section) => {
 												return { label: section.title, value: section.id };
 											})}
 											onChange={(value) => {
@@ -268,6 +294,65 @@ const CreateDocument = () => {
 					) : (
 						<Skeleton className='h-10' />
 					)}
+					<div className='rounded-lg border p-4 space-y-3'>
+						<div>
+							<h2 className='font-semibold'>Website Translation</h2>
+							<p className='text-sm text-muted-foreground'>
+								Translate the current tab in place, then restore the original
+								text whenever you want.
+							</p>
+						</div>
+						<div className='flex gap-3'>
+							<Button
+								type='button'
+								variant='secondary'
+								disabled={translatingPage}
+								onClick={async () => {
+									try {
+										setTranslatingPage(true);
+										const response = await sendMessageToActiveTab(
+											'TRANSLATE_PAGE'
+										);
+										toast.success(
+											`Translated ${response.count ?? 0} text nodes`
+										);
+									} catch (error) {
+										toast.error(
+											error instanceof Error
+												? error.message
+												: 'Failed to translate current page'
+										);
+									} finally {
+										setTranslatingPage(false);
+									}
+								}}>
+								Translate Page
+								{translatingPage && <Loader2 className='h-4 w-4 animate-spin' />}
+							</Button>
+							<Button
+								type='button'
+								variant='outline'
+								disabled={restoringPage}
+								onClick={async () => {
+									try {
+										setRestoringPage(true);
+										await sendMessageToActiveTab('RESTORE_PAGE_TRANSLATION');
+										toast.success('Original page restored');
+									} catch (error) {
+										toast.error(
+											error instanceof Error
+												? error.message
+												: 'Failed to restore current page'
+										);
+									} finally {
+										setRestoringPage(false);
+									}
+								}}>
+								Restore Original
+								{restoringPage && <Loader2 className='h-4 w-4 animate-spin' />}
+							</Button>
+						</div>
+					</div>
 				</form>
 			</Form>
 			<div className='flex justify-end gap-3'>
