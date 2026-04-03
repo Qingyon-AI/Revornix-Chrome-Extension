@@ -28,7 +28,6 @@ import {
 	DEFAULT_TRANSLATION_DISPLAY_MODE,
 	DEFAULT_TRANSLATION_PROVIDER,
 	DEFAULT_TARGET_LANGUAGE,
-	DEFAULT_TRANSLATION_MODEL,
 	TRANSLATION_PROVIDER_OPTIONS,
 	type TranslationDisplayMode,
 	type TranslationProvider,
@@ -54,12 +53,12 @@ const ConfigForm = () => {
 		setTranslationApiKey,
 		setTranslationProvider,
 		setTranslationBaseUrl,
-			setTranslationModel,
-			setTranslationTargetLanguage,
-			setTranslationDisplayMode,
-			setTranslationFloatingBallEnabled,
-			uiLanguage,
-		} = useAppProvider();
+		setTranslationModel,
+		setTranslationTargetLanguage,
+		setTranslationDisplayMode,
+		setTranslationFloatingBallEnabled,
+		uiLanguage,
+	} = useAppProvider();
 	const copy = getUiCopy(uiLanguage);
 
 	const formSchema = z.object({
@@ -99,12 +98,12 @@ const ConfigForm = () => {
 			setTranslationProvider(data.translationProvider);
 			setTranslationModel(data.translationModel);
 			setTranslationTargetLanguage(data.translationTargetLanguage);
-				setTranslationDisplayMode(data.translationDisplayMode);
-				setTranslationFloatingBallEnabled(data.translationFloatingBallEnabled);
-				setSubmitting(false);
-				toast.success(copy.saveSuccess);
-			});
-		};
+			setTranslationDisplayMode(data.translationDisplayMode);
+			setTranslationFloatingBallEnabled(data.translationFloatingBallEnabled);
+			setSubmitting(false);
+			toast.success(copy.saveSuccess);
+		});
+	};
 
 	useEffect(() => {
 		form.reset({
@@ -113,7 +112,7 @@ const ConfigForm = () => {
 			translationBaseUrl,
 			translationApiKey,
 			translationProvider: translationProvider || DEFAULT_TRANSLATION_PROVIDER,
-			translationModel: translationModel || DEFAULT_TRANSLATION_MODEL,
+			translationModel,
 			translationTargetLanguage:
 				translationTargetLanguage || DEFAULT_TARGET_LANGUAGE,
 			translationDisplayMode:
@@ -128,9 +127,9 @@ const ConfigForm = () => {
 		translationApiKey,
 		translationBaseUrl,
 		translationProvider,
+		translationModel,
 		translationDisplayMode,
 		translationFloatingBallEnabled,
-		translationModel,
 		translationTargetLanguage,
 	]);
 
@@ -245,6 +244,23 @@ const ConfigForm = () => {
 								}}
 							/>
 							<FormField
+								name='translationModel'
+								control={form.control}
+								render={({ field }) => {
+									return (
+										<FormItem>
+											<FormLabel>{copy.translationModel}</FormLabel>
+											<Input
+												{...field}
+												placeholder='gpt-4.1-mini'
+												disabled={form.watch('translationProvider') !== 'openai-compatible'}
+											/>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+							<FormField
 								name='translationApiKey'
 								control={form.control}
 								render={({ field }) => {
@@ -255,22 +271,6 @@ const ConfigForm = () => {
 												{...field}
 												type='password'
 												placeholder='sk-...'
-											/>
-											<FormMessage />
-										</FormItem>
-									);
-								}}
-							/>
-							<FormField
-								name='translationModel'
-								control={form.control}
-								render={({ field }) => {
-									return (
-										<FormItem>
-												<FormLabel>{copy.translationModel}</FormLabel>
-											<Input
-												{...field}
-												placeholder={DEFAULT_TRANSLATION_MODEL}
 											/>
 											<FormMessage />
 										</FormItem>

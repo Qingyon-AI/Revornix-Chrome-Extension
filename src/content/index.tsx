@@ -55,7 +55,6 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 					const result = await pageTranslator.translatePage({
 						targetLanguage: message.payload?.targetLanguage || defaults.targetLanguage,
 						mode: message.payload?.mode || defaults.mode,
-						model: message.payload?.model || defaults.model,
 						provider: message.payload?.provider || defaults.provider,
 					});
 					sendResponse({ success: true, ...result });
@@ -100,7 +99,6 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 						payload: {
 							items: [{ id: 'selection-translation', text }],
 							targetLanguage: defaults.targetLanguage,
-							model: defaults.model,
 							provider: defaults.provider,
 						},
 					});
@@ -151,7 +149,6 @@ async function getDefaultTranslationOptions() {
 			siteRule.provider ||
 			result.translationProvider ||
 			DEFAULT_TRANSLATION_PROVIDER,
-		model: siteRule.model || result.translationModel || undefined,
 	};
 }
 

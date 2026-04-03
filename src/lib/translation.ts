@@ -27,6 +27,15 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
 
 export type TranslationProvider = (typeof TRANSLATION_PROVIDER_OPTIONS)[number];
 
+export const TRANSLATION_PROVIDER_DEFAULT_MODELS: Record<TranslationProvider, string> = {
+	'openai-compatible': DEFAULT_TRANSLATION_MODEL,
+	'google-translate-free': 'google-translate-free',
+};
+
+export function getTranslationModelForProvider(provider: TranslationProvider) {
+	return TRANSLATION_PROVIDER_DEFAULT_MODELS[provider];
+}
+
 export type TranslationDisplayMode = 'translated-only' | 'bilingual';
 
 export interface TranslationSiteRule {

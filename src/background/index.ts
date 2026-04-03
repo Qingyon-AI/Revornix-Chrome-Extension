@@ -5,10 +5,10 @@ import {
 	DEFAULT_TRANSLATION_DISPLAY_MODE,
 	DEFAULT_TRANSLATION_PROVIDER,
 	DEFAULT_TARGET_LANGUAGE,
-	DEFAULT_TRANSLATION_MODEL,
 	TRANSLATION_CACHE_KEY,
 	TRANSLATION_CACHE_MAX_ENTRIES,
 	TRANSLATION_CACHE_TTL_MS,
+	getTranslationModelForProvider,
 	type TranslationItem,
 	type TranslationProvider,
 	type TranslationSettings,
@@ -236,7 +236,7 @@ async function translateItems(
 	const settings = await getTranslationSettings();
 	const target = targetLanguage || settings.translationTargetLanguage || DEFAULT_TARGET_LANGUAGE;
 	const resolvedProvider = provider || settings.translationProvider;
-	const resolvedModel = model || settings.translationModel;
+	const resolvedModel = resolveTranslationModel(model, resolvedProvider, settings);
 	const cacheStore = await getTranslationCacheStore();
 	const now = Date.now();
 	const results = new Map<string, string>();
@@ -358,6 +358,22 @@ async function translateItems(
 	}));
 }
 
+function resolveTranslationModel(
+	model: string | undefined,
+	provider: TranslationProvider,
+	settings: TranslationSettings
+) {
+	if (model?.trim()) {
+		return model.trim();
+	}
+
+	if (provider === 'openai-compatible' && settings.translationModel.trim()) {
+		return settings.translationModel.trim();
+	}
+
+	return getTranslationModelForProvider(provider);
+}
+
 
 async function getTranslationCacheStore() {
 	const result = await chrome.storage.local.get([TRANSLATION_CACHE_KEY]);
@@ -443,7 +459,10 @@ function getTranslationSettings() {
 					translationBaseUrl: (storage.translationBaseUrl as string) || '',
 					translationApiKey: (storage.translationApiKey as string) || '',
 					translationModel:
-						(storage.translationModel as string) || DEFAULT_TRANSLATION_MODEL,
+						(storage.translationModel as string) || getTranslationModelForProvider(
+							(storage.translationProvider as TranslationProvider) ||
+								DEFAULT_TRANSLATION_PROVIDER
+						),
 					translationTargetLanguage:
 						(storage.translationTargetLanguage as string) || DEFAULT_TARGET_LANGUAGE,
 					translationDisplayMode:

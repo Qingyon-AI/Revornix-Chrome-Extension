@@ -11,7 +11,7 @@ import {
 	Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PortalContainerProvider } from '@/components/ui/portal-context';
 import {
 	Select,
 	SelectContent,
@@ -29,7 +29,6 @@ import {
 import { formatCopy, getUiCopy } from '@/lib/ui-copy';
 import { DEFAULT_UI_LANGUAGE, DEFAULT_UI_THEME, resolveUiTheme, type UiLanguage, type UiTheme } from '@/lib/ui-preferences';
 import {
-	COMMON_TRANSLATION_MODELS,
 	DEFAULT_FLOATING_BALL_ENABLED,
 	DEFAULT_TARGET_LANGUAGE,
 	DEFAULT_TRANSLATION_DISPLAY_MODE,
@@ -47,7 +46,6 @@ interface WidgetSettings {
 	translationTargetLanguage: string;
 	translationDisplayMode: TranslationDisplayMode;
 	translationProvider: TranslationProvider;
-	translationModel: string;
 	translationFloatingBallEnabled: boolean;
 	translationFloatingBallTop: number;
 	translationFloatingBallSide: 'left' | 'right';
@@ -68,7 +66,6 @@ const STORAGE_KEYS: string[] = [
 	'translationTargetLanguage',
 	'translationDisplayMode',
 	'translationProvider',
-	'translationModel',
 	'translationFloatingBallEnabled',
 	'translationFloatingBallTop',
 	'translationFloatingBallSide',
@@ -82,7 +79,6 @@ function getDefaultSettings(): WidgetSettings {
 		translationTargetLanguage: DEFAULT_TARGET_LANGUAGE,
 		translationDisplayMode: DEFAULT_TRANSLATION_DISPLAY_MODE,
 		translationProvider: DEFAULT_TRANSLATION_PROVIDER,
-		translationModel: '',
 		translationFloatingBallEnabled: DEFAULT_FLOATING_BALL_ENABLED,
 		translationFloatingBallTop: 0.5,
 		translationFloatingBallSide: 'right',
@@ -111,7 +107,6 @@ async function loadWidgetSettings(): Promise<WidgetSettings> {
 			siteRule.provider ||
 			(result.translationProvider as TranslationProvider) ||
 			DEFAULT_TRANSLATION_PROVIDER,
-		translationModel: siteRule.model || (result.translationModel as string) || '',
 		translationFloatingBallEnabled:
 			(result.translationFloatingBallEnabled as boolean | undefined) ?? DEFAULT_FLOATING_BALL_ENABLED,
 		translationFloatingBallTop:
@@ -131,7 +126,6 @@ async function updateSiteRule(nextRule: {
 	targetLanguage?: string;
 	displayMode?: TranslationDisplayMode;
 	provider?: TranslationProvider;
-	model?: string;
 }) {
 	const hostname = window.location.hostname;
 	const result = await chrome.storage.local.get([TRANSLATION_SITE_RULES_KEY]);
@@ -190,15 +184,31 @@ function FloatingTranslationWidgetApp({
 	useEffect(() => {
 		const handlePointerDown = (event: PointerEvent) => {
 			const target = event.target as Node | null;
-			if (!target) {
+			const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+			if (!target && path.length === 0) {
 				return;
 			}
 
 			const rootNode = scopeRef.current;
-			const insideWidget = Boolean(rootNode?.contains(target));
-			const insideRevornixPanel =
-				target instanceof Element &&
-				Boolean(target.closest('[data-revornix-side-panel="true"]'));
+			const insideWidget = Boolean(
+				rootNode &&
+					((target ? rootNode.contains(target) : false) ||
+						path.includes(rootNode) ||
+						path.some(
+							(node) =>
+								node instanceof Element &&
+								node.closest('#revornix-translation-widget-root') !== null
+						))
+			);
+			const insideRevornixPanel = Boolean(
+				path.some(
+					(node) =>
+						node instanceof Element &&
+						node.closest('[data-revornix-side-panel="true"]') !== null
+				) ||
+					(target instanceof Element &&
+						Boolean(target.closest('[data-revornix-side-panel="true"]')))
+			);
 			if (insideWidget || insideRevornixPanel) {
 				return;
 			}
@@ -276,7 +286,6 @@ function FloatingTranslationWidgetApp({
 					changes.translationTargetLanguage ||
 					changes.translationDisplayMode ||
 					changes.translationProvider ||
-						changes.translationModel ||
 					changes.translationFloatingBallEnabled ||
 					changes.translationFloatingBallTop ||
 					changes.translationFloatingBallSide ||
@@ -326,6 +335,15 @@ function FloatingTranslationWidgetApp({
 	}, [settings.autoTranslateCurrentSite, currentUrl]);
 
 	useEffect(() => {
+		if (!revornixPanelOpen) {
+			return;
+		}
+
+		setExpanded(false);
+		setShortcutExpanded(false);
+	}, [revornixPanelOpen]);
+
+	useEffect(() => {
 		if (
 			!settings.translationFloatingBallEnabled ||
 			!settings.autoTranslateCurrentSite
@@ -369,12 +387,11 @@ function FloatingTranslationWidgetApp({
 		}
 
 		const state = pageTranslator.getState();
-		const shouldRetranslate =
+			const shouldRetranslate =
 			forceRetranslate ||
 			(state.status === 'translated' &&
 				(state.targetLanguage !== settings.translationTargetLanguage ||
-					state.mode !== settings.translationDisplayMode ||
-					state.model !== (settings.translationModel || null)));
+					state.mode !== settings.translationDisplayMode));
 
 		setTranslating(true);
 		try {
@@ -386,7 +403,6 @@ function FloatingTranslationWidgetApp({
 					targetLanguage: settings.translationTargetLanguage,
 					mode: settings.translationDisplayMode,
 					provider: settings.translationProvider,
-					model: settings.translationModel || undefined,
 				});
 			} finally {
 				setTranslating(false);
@@ -570,28 +586,31 @@ function FloatingTranslationWidgetApp({
 	}
 
 	return (
-		<>
-			<div
-				ref={scopeRef}
-				className={`revornix-widget-scope fixed z-[2147483646] ${resolvedTheme === 'dark' ? 'dark' : ''}`}
-				style={{
-					top: dragPreview
-						? `${dragPreview.top}px`
-						: `${Math.round(settings.translationFloatingBallTop * 100)}%`,
-					transform: dragPreview ? 'translateY(-50%)' : 'translateY(-50%)',
-					left:
-						dragPreview
-							? `${dragPreview.left}px`
-							: settings.translationFloatingBallSide === 'left'
-								? '18px'
+		<PortalContainerProvider container={selectContainer}>
+			<>
+				<div
+					ref={scopeRef}
+					className={`revornix-widget-scope fixed z-[2147483646] transition-opacity duration-150 ${
+						resolvedTheme === 'dark' ? 'dark' : ''
+					} ${revornixPanelOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+					style={{
+						top: dragPreview
+							? `${dragPreview.top}px`
+							: `${Math.round(settings.translationFloatingBallTop * 100)}%`,
+						transform: dragPreview ? 'translateY(-50%)' : 'translateY(-50%)',
+						left:
+							dragPreview
+								? `${dragPreview.left}px`
+								: settings.translationFloatingBallSide === 'left'
+									? '18px'
+									: undefined,
+						right:
+							dragPreview
+								? undefined
+								: settings.translationFloatingBallSide === 'right'
+									? '18px'
 								: undefined,
-					right:
-						dragPreview
-							? undefined
-							: settings.translationFloatingBallSide === 'right'
-								? '18px'
-							: undefined,
-				}}>
+					}}>
 				<div
 					className="relative flex items-center"
 					onMouseEnter={() => {
@@ -736,34 +755,6 @@ function FloatingTranslationWidgetApp({
 									</SelectContent>
 								</Select>
 						</div>
-
-							<div className="space-y-1.5">
-								<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-									{copy.translationModel}
-								</div>
-							<Input
-								list="revornix-translation-models"
-								value={settings.translationModel}
-								onChange={(event) => {
-									setSettings((prev) => ({
-										...prev,
-										translationModel: event.target.value,
-									}));
-								}}
-								onBlur={() => {
-									void persistSetting('translationModel', settings.translationModel);
-									void updateSiteRule({ model: settings.translationModel });
-								}}
-								placeholder="例如 gpt-4.1-mini"
-								className="h-8 text-sm"
-							/>
-							<datalist id="revornix-translation-models">
-								{COMMON_TRANSLATION_MODELS.map((model) => (
-									<option key={model} value={model} />
-								))}
-							</datalist>
-						</div>
-
 							<div className="space-y-1.5">
 								<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
 									{copy.displayMode}
@@ -1005,15 +996,17 @@ function FloatingTranslationWidgetApp({
 					</Button>
 				</div>
 			</div>
-			<RevornixSidePanel
-				open={revornixPanelOpen}
-				onClose={() => {
-					setRevornixPanelOpen(false);
-				}}
-				currentUrl={currentUrl}
-				uiLanguage={settings.uiLanguage}
-			/>
-		</>
+				<RevornixSidePanel
+					open={revornixPanelOpen}
+					onClose={() => {
+						setRevornixPanelOpen(false);
+					}}
+					currentUrl={currentUrl}
+					uiLanguage={settings.uiLanguage}
+					resolvedTheme={resolvedTheme}
+				/>
+			</>
+		</PortalContainerProvider>
 	);
 }
 

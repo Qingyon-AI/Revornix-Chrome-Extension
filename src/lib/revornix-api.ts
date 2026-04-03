@@ -121,6 +121,13 @@ interface RevornixRequestOptions {
 	body?: Record<string, unknown>;
 }
 
+export interface RevornixChatMessage {
+	chat_id: string;
+	role: string;
+	content: string;
+	images?: string[];
+}
+
 export async function listDocumentLabels(baseUrl: string, apiKey: string) {
 	const response = await requestRevornix<{ data: RevornixDocumentLabel[] }>({
 		baseUrl,
@@ -379,6 +386,26 @@ export async function createQuickNoteDocument(
 			auto_tag: false,
 			...payload,
 		},
+	});
+}
+
+export async function askDocumentAiStream(
+	baseUrl: string,
+	apiKey: string,
+	payload: {
+		document_id: number;
+		messages: RevornixChatMessage[];
+		enable_mcp?: boolean;
+	}
+) {
+	return fetch(`${baseUrl.replace(/\/$/, '')}/tp/document/ask`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'api-key': apiKey,
+			'x-user-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+		},
+		body: JSON.stringify(payload),
 	});
 }
 

@@ -88,7 +88,7 @@ async function translateWithOpenAICompatible(
 	model: string,
 	settings: TranslationSettings
 ) {
-	if (!settings.translationBaseUrl || !settings.translationModel) {
+	if (!settings.translationBaseUrl || !model) {
 		throw new Error(
 			'Translation settings are incomplete. Please configure the translation service in options.'
 		);
