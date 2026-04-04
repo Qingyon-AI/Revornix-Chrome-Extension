@@ -1772,8 +1772,8 @@ export function RevornixSidePanel({
 		<div
 			data-revornix-side-panel='true'
 			data-state={open ? 'open' : 'closed'}
-			className={`revornix-widget-scope fixed z-[2147483645] overflow-hidden rounded-[28px] text-white shadow-[-18px_0_48px_rgba(0,0,0,0.22)] transition-[transform,opacity,background-color,border-color,backdrop-filter] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right-4 data-[state=open]:slide-in-from-right-4 ${
-				resolvedTheme === 'dark' ? 'dark' : ''
+			className={`revornix-widget-scope fixed z-[2147483645] overflow-hidden rounded-[28px] shadow-[-18px_0_48px_rgba(0,0,0,0.22)] transition-[transform,opacity,background-color,border-color,backdrop-filter,color] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right-4 data-[state=open]:slide-in-from-right-4 ${
+				'dark'
 			} ${
 				open
 					? 'pointer-events-auto opacity-100'
@@ -1785,6 +1785,7 @@ export function RevornixSidePanel({
 				width: `${panelFrame.width}px`,
 				height: `${panelFrame.height}px`,
 				opacity: panelOpacity,
+				color: 'rgba(246,248,255,0.95)',
 				backgroundColor: `rgba(30, 33, 40, ${Math.max(panelBackgroundAlpha, 0.1)})`,
 				border: `1px solid rgba(255,255,255,${Math.max(panelBorderAlpha, 0.03)})`,
 				backdropFilter: `blur(${Math.max(panelBlur, 10)}px) saturate(${1.02 - scrollFade * 0.08})`,

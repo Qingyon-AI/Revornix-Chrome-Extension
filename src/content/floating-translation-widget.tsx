@@ -141,16 +141,18 @@ function FloatingTranslationWidgetApp({
 }: {
 	portalContainer?: HTMLElement | null;
 }) {
+	type ActiveSelect = 'target-language' | 'translation-provider' | 'display-mode' | null;
 	const [settings, setSettings] = useState<WidgetSettings>(getDefaultSettings());
 	const [expanded, setExpanded] = useState(false);
 	const [shortcutExpanded, setShortcutExpanded] = useState(false);
+	const [activeSelect, setActiveSelect] = useState<ActiveSelect>(null);
 	const [translating, setTranslating] = useState(false);
 	const [dragging, setDragging] = useState(false);
 	const [dragPreview, setDragPreview] = useState<{ left: number; top: number } | null>(null);
 	const [movedDuringPointer, setMovedDuringPointer] = useState(false);
 	const [translatorState, setTranslatorState] = useState(pageTranslator.getState());
 	const [selectContainer, setSelectContainer] = useState<HTMLElement | null>(null);
-	const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+	const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 	const [currentUrl, setCurrentUrl] = useState(window.location.href);
 	const [revornixPanelOpen, setRevornixPanelOpen] = useState(false);
 	const closeTimerRef = useRef<number | null>(null);
@@ -212,6 +214,7 @@ function FloatingTranslationWidgetApp({
 
 			setExpanded(false);
 			setShortcutExpanded(false);
+			setActiveSelect(null);
 		};
 
 		window.addEventListener('pointerdown', handlePointerDown);
@@ -315,6 +318,7 @@ function FloatingTranslationWidgetApp({
 
 		setExpanded(false);
 		setShortcutExpanded(false);
+		setActiveSelect(null);
 	}, [revornixPanelOpen]);
 
 	useEffect(() => {
@@ -457,6 +461,12 @@ function FloatingTranslationWidgetApp({
 				: settings.translationFloatingBallSide === 'left'
 					? 'data-[state=closed]:slide-out-to-left-2 data-[state=open]:slide-in-from-left-2'
 					: 'data-[state=closed]:slide-out-to-right-2 data-[state=open]:slide-in-from-right-2';
+	const shortcutButtonClass =
+		'border-white/10 bg-[rgba(34,40,54,0.9)] text-[rgba(244,247,255,0.94)] shadow-[0_18px_38px_rgba(0,0,0,0.34)] hover:bg-[rgba(44,52,69,0.96)]';
+	const floatingBallClass =
+		'border-white/10 bg-[linear-gradient(180deg,rgba(102,146,255,0.95),rgba(74,115,232,0.92))] text-white shadow-[0_18px_42px_rgba(13,18,34,0.42)] hover:shadow-[0_22px_48px_rgba(13,18,34,0.48)]';
+	const primaryActionClass =
+		'border border-sky-400/25 bg-[linear-gradient(180deg,rgba(74,163,255,0.94),rgba(38,123,222,0.92))] text-white shadow-[0_10px_24px_rgba(22,96,180,0.28)] hover:bg-[linear-gradient(180deg,rgba(86,172,255,0.98),rgba(46,131,230,0.96))] hover:shadow-[0_14px_28px_rgba(22,96,180,0.34)]';
 
 	const handleBallClick = async () => {
 		if (movedDuringPointer) {
@@ -580,7 +590,7 @@ function FloatingTranslationWidgetApp({
 				<div
 					ref={scopeRef}
 					className={`revornix-widget-scope fixed z-[2147483646] transition-opacity duration-150 ${
-						resolvedTheme === 'dark' ? 'dark' : ''
+						'dark'
 					} ${revornixPanelOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
 					style={{
 						top: dragPreview
@@ -623,7 +633,7 @@ function FloatingTranslationWidgetApp({
 							type="button"
 							size="icon"
 							variant="secondary"
-							className="absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-background/95 shadow-xl transition-[transform,opacity] duration-200"
+							className={`absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-[transform,opacity,background-color,color,border-color,box-shadow] duration-200 ${shortcutButtonClass}`}
 							style={translationShortcutStyle}
 							onMouseEnter={cancelCloseTimer}
 							onPointerDown={(event) => {
@@ -644,7 +654,7 @@ function FloatingTranslationWidgetApp({
 							type="button"
 							size="icon"
 							variant="secondary"
-							className="absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-background/95 shadow-xl transition-[transform,opacity] duration-200"
+							className={`absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-[transform,opacity,background-color,color,border-color,box-shadow] duration-200 ${shortcutButtonClass}`}
 							style={revornixShortcutStyle}
 							onMouseEnter={cancelCloseTimer}
 							onPointerDown={(event) => {
@@ -665,7 +675,7 @@ function FloatingTranslationWidgetApp({
 							type="button"
 							size="icon"
 							variant="secondary"
-							className="absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-background/95 shadow-xl transition-[transform,opacity] duration-200"
+							className={`absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-[transform,opacity,background-color,color,border-color,box-shadow] duration-200 ${shortcutButtonClass}`}
 							style={settingsShortcutStyle}
 							onMouseEnter={cancelCloseTimer}
 							onPointerDown={(event) => {
@@ -686,7 +696,7 @@ function FloatingTranslationWidgetApp({
 							type="button"
 							size="icon"
 							variant="secondary"
-							className="absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-background/95 shadow-xl transition-[transform,opacity] duration-200"
+							className={`absolute left-1/2 top-1/2 z-20 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-[transform,opacity,background-color,color,border-color,box-shadow] duration-200 ${shortcutButtonClass}`}
 							style={logsShortcutStyle}
 							onMouseEnter={cancelCloseTimer}
 							onPointerDown={(event) => {
@@ -722,15 +732,10 @@ function FloatingTranslationWidgetApp({
 						style={{
 							top: `${panelRelativeTop}px`,
 							maxHeight: `${panelMaxHeight}px`,
-							backgroundColor:
-								resolvedTheme === 'dark'
-									? 'rgba(30, 33, 40, 0.72)'
-									: 'rgba(255, 255, 255, 0.78)',
-							border: `1px solid ${
-								resolvedTheme === 'dark'
-									? 'rgba(255,255,255,0.08)'
-									: 'rgba(15,23,42,0.08)'
-							}`,
+							backgroundColor: 'rgba(30, 33, 40, 0.76)',
+							border: '1px solid rgba(255,255,255,0.08)',
+							boxShadow:
+								'0 24px 60px rgba(5, 10, 20, 0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
 							backdropFilter: 'blur(20px) saturate(1.08)',
 						}}
 						onMouseEnter={() => {
@@ -755,10 +760,15 @@ function FloatingTranslationWidgetApp({
 									{copy.targetLanguage}
 								</div>
 							<Select
+								open={activeSelect === 'target-language'}
+								onOpenChange={(open) => {
+									setActiveSelect(open ? 'target-language' : null);
+								}}
 								value={settings.translationTargetLanguage}
 								onValueChange={(value) => {
 									updateSetting('translationTargetLanguage', value);
 									void updateSiteRule({ targetLanguage: value });
+									setActiveSelect(null);
 									}}>
 									<SelectTrigger className="w-full" size="sm">
 										<SelectValue placeholder={copy.targetLanguage} />
@@ -778,6 +788,10 @@ function FloatingTranslationWidgetApp({
 									{copy.translationEngine}
 								</div>
 							<Select
+								open={activeSelect === 'translation-provider'}
+								onOpenChange={(open) => {
+									setActiveSelect(open ? 'translation-provider' : null);
+								}}
 								value={settings.translationProvider}
 								onValueChange={(value) => {
 									updateSetting(
@@ -787,6 +801,7 @@ function FloatingTranslationWidgetApp({
 									void updateSiteRule({
 										provider: value as TranslationProvider,
 									});
+									setActiveSelect(null);
 								}}>
 								<SelectTrigger className="w-full" size="sm">
 									<SelectValue placeholder={copy.translationEngine} />
@@ -806,12 +821,17 @@ function FloatingTranslationWidgetApp({
 									{copy.displayMode}
 								</div>
 								<Select
+									open={activeSelect === 'display-mode'}
+									onOpenChange={(open) => {
+										setActiveSelect(open ? 'display-mode' : null);
+									}}
 									value={settings.translationDisplayMode}
 									onValueChange={(value) => {
 										const nextMode = value as TranslationDisplayMode;
 										updateSetting('translationDisplayMode', nextMode);
 										void updateSiteRule({ displayMode: nextMode });
 										pageTranslator.setDisplayMode(nextMode);
+										setActiveSelect(null);
 									}}>
 									<SelectTrigger className="w-full" size="sm">
 										<SelectValue placeholder={copy.displayMode} />
@@ -852,6 +872,11 @@ function FloatingTranslationWidgetApp({
 									size="sm"
 									variant={
 										translatorState.status === 'cancelling' ? 'secondary' : 'default'
+									}
+									className={
+										translatorState.status === 'cancelling'
+											? undefined
+											: primaryActionClass
 									}
 									disabled={translatorState.status === 'cancelling'}
 									onClick={() => {
@@ -941,7 +966,7 @@ function FloatingTranslationWidgetApp({
 					<Button
 						type="button"
 						size="icon"
-						className={`relative z-10 size-10 rounded-full shadow-lg transition-transform duration-200 hover:scale-105 active:scale-95 ${
+						className={`relative z-10 size-10 rounded-full border transition-[transform,box-shadow,background-color,border-color] duration-200 hover:scale-105 active:scale-95 ${floatingBallClass} ${
 							expanded || shortcutExpanded ? 'ring-4 ring-ring/20' : ''
 						} ${dragging ? 'cursor-grabbing scale-105' : 'cursor-grab'}`}
 						onPointerDown={handlePointerDown}
