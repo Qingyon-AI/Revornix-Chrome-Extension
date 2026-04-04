@@ -289,8 +289,10 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 
 async function getDefaultTranslationOptions() {
 	const result = await chrome.storage.local.get([
+		'translationProvider',
 		'translationTargetLanguage',
 		'translationDisplayMode',
+		'uiLanguage',
 		TRANSLATION_SITE_RULES_KEY,
 	]);
 	const hostname = window.location.hostname;
@@ -367,7 +369,7 @@ function showSelectionTranslationPopup({
 }) {
 	const copy = getUiCopy(uiLanguage);
 	const providerLabel =
-		provider === 'google-free'
+		provider === 'google-translate-free'
 			? copy.translationProviderGoogleFree
 			: copy.translationProviderOpenAI;
 

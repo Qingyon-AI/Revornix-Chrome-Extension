@@ -355,6 +355,13 @@ function FloatingTranslationWidgetApp({
 		});
 	};
 
+	const updateSetting = <K extends keyof WidgetSettings>(
+		key: K,
+		value: WidgetSettings[K]
+	) => {
+		setSettings((prev) => ({ ...prev, [key]: value }));
+	};
+
 	const runTranslate = async (forceRetranslate = false) => {
 		if (translating) {
 			return;
@@ -750,7 +757,7 @@ function FloatingTranslationWidgetApp({
 							<Select
 								value={settings.translationTargetLanguage}
 								onValueChange={(value) => {
-									void persistSetting('translationTargetLanguage', value);
+									updateSetting('translationTargetLanguage', value);
 									void updateSiteRule({ targetLanguage: value });
 									}}>
 									<SelectTrigger className="w-full" size="sm">
@@ -768,12 +775,12 @@ function FloatingTranslationWidgetApp({
 
 							<div className="space-y-1.5">
 								<div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-									{copy.translationProvider}
+									{copy.translationEngine}
 								</div>
 							<Select
 								value={settings.translationProvider}
 								onValueChange={(value) => {
-									void persistSetting(
+									updateSetting(
 										'translationProvider',
 										value as TranslationProvider
 									);
@@ -782,7 +789,7 @@ function FloatingTranslationWidgetApp({
 									});
 								}}>
 								<SelectTrigger className="w-full" size="sm">
-									<SelectValue placeholder={copy.translationProvider} />
+									<SelectValue placeholder={copy.translationEngine} />
 								</SelectTrigger>
 									<SelectContent container={selectContainer}>
 										<SelectItem value={TRANSLATION_PROVIDER_OPTIONS[0]}>
@@ -802,7 +809,7 @@ function FloatingTranslationWidgetApp({
 									value={settings.translationDisplayMode}
 									onValueChange={(value) => {
 										const nextMode = value as TranslationDisplayMode;
-										void persistSetting('translationDisplayMode', nextMode);
+										updateSetting('translationDisplayMode', nextMode);
 										void updateSiteRule({ displayMode: nextMode });
 										pageTranslator.setDisplayMode(nextMode);
 									}}>
