@@ -516,6 +516,7 @@ export function RevornixSidePanel({
 		const requestId = metadataRequestIdRef.current + 1;
 		metadataRequestIdRef.current = requestId;
 		const nextDraft = readDraftFromPage(nextUrl);
+		const previousSelectedDocumentId = matchedDocument?.id ?? null;
 
 		if (!configured) {
 			setAvailableLabels([]);
@@ -590,13 +591,26 @@ export function RevornixSidePanel({
 				) ||
 				directMatchResult ||
 				null;
-			setMatchedDocument(exactMatch);
-			if (exactMatch) {
-				setSelectedLabelIds(exactMatch.labels?.map((label) => label.id) || []);
-				setSelectedSectionIds(
-					exactMatch.sections?.map((section) => section.id) || [],
+			const selectedDocument =
+				exactMatch ||
+				dedupedWebsiteDocuments.find(
+					(document) => document.id === previousSelectedDocumentId,
+				) ||
+				dedupedWebsiteDocuments[0] ||
+				null;
+			setMatchedDocument(selectedDocument);
+			if (selectedDocument) {
+				setSelectedLabelIds(
+					selectedDocument.labels?.map((label) => label.id) || [],
 				);
-				setStatusText(copy.revornixMatchedCurrentDocument);
+				setSelectedSectionIds(
+					selectedDocument.sections?.map((section) => section.id) || [],
+				);
+				setStatusText(
+					exactMatch
+						? copy.revornixMatchedCurrentDocument
+						: copy.revornixSelectedRelatedDocument,
+				);
 			} else {
 				setSelectedLabelIds([]);
 				setSelectedSectionIds([]);
@@ -675,6 +689,7 @@ export function RevornixSidePanel({
 		draft.title,
 		copy.revornixActionFailed,
 		copy.revornixMatchedCurrentDocument,
+		copy.revornixSelectedRelatedDocument,
 		copy.revornixNoMatchedDocuments,
 		copy.revornixPanelConfigRequired,
 	]);
@@ -1446,6 +1461,13 @@ export function RevornixSidePanel({
 			),
 		[matchedDocuments, draft.url],
 	);
+	const matchedDocumentIsExact = useMemo(
+		() =>
+			matchedDocument
+				? isExactWebsiteDocumentMatch(matchedDocument, draft.url)
+				: false,
+		[matchedDocument, draft.url],
+	);
 	const selectedLabelNames = useMemo(
 		() =>
 			availableLabels
@@ -1915,7 +1937,7 @@ export function RevornixSidePanel({
 										</div>
 									) : (
 										<div className='space-y-2'>
-											{matchedDocuments.map((document) => {
+									{matchedDocuments.map((document) => {
 												const active = matchedDocument?.id === document.id;
 												const exact = isExactWebsiteDocumentMatch(
 													document,
@@ -2349,7 +2371,10 @@ export function RevornixSidePanel({
 								</div>
 								{matchedDocument ? (
 									<div className='mb-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-white/62'>
-										{copy.revornixMatchedCurrentDocument}:{' '}
+										{matchedDocumentIsExact
+											? copy.revornixMatchedCurrentDocument
+											: copy.revornixSelectedRelatedDocument}
+										:{' '}
 										{matchedDocument.title}
 									</div>
 								) : null}
